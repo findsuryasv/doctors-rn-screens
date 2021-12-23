@@ -18,10 +18,14 @@ import Login from './src/Screens/Login/Login';
 import Chat from './src/Screens/Chat/Chat';
 import Reviews from './src/Screens/Reviews/Reviews';
 import PersonalInformation from './src/Screens/PersonalInformation/PersonalInformation';
+import Clinic from './src/Screens/Clinic/Clinic';
+import SandS from './src/Screens/SandS/SandS';
+import Rewards from './src/Screens/Rewards/Rewards';
+import EducationAndExperience from './src/Screens/EducationAndExperience/EducationAndExperience';
 
 const App = () => {
   return (
-    <Login />
+    <EducationAndExperience/>
   )
 }
 
