@@ -1,10 +1,52 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Dimensions, View, Image, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
-import { IconButton, TextInput } from 'react-native-paper'
+import { Dimensions, View, Image, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput } from "react-native";
+import { IconButton  } from 'react-native-paper'
 import SelectDropdown from 'react-native-select-dropdown'
 const { width, height } = Dimensions.get("window");
-
-const PersonalInformation = () => {
+import { Controller, useForm } from 'react-hook-form';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axiosInstance from '../../Services';
+const PersonalInformation = (navigation) => {
+    const { handleSubmit, control, formState: { errors } } = useForm();
+    const [gender, setGender] = useState([]);
+    const[Gender,SetGender] = useState("");
+    const save = async (data) => {
+        console.log(data);
+        try {
+            const user = await AsyncStorage.getItem('user');
+            const Personaldata={
+                requestType:'0',
+                profile:{
+                    contactInfo:{
+                        city:data.city,
+                        country:data.country,
+                        pinCode:data.pincode,
+                        state:data.couStateProvincentry,
+                        streetAddress:data.address2
+                    },
+                    dateOfBirth:data.dateofbirth,
+                    doctorId:JSON.parse(user)?.id,
+                    gender:Gender,
+                    height:'6',
+                    id:JSON.parse(user)?.id,
+                    languages:'english',
+                    personal:{
+                        phone:data.phone
+                    },
+                    profileDescription:data.bio,
+                    profilePic:"none",
+                    registration:data.licence,
+                    signature:"none"
+                }
+            }
+            console.log("personaldata>>>>>>>"+JSON.stringify(Personaldata))
+            const res = await axiosInstance.post('/api/profile/doctor', Personaldata);
+            console.log(res);
+            navigation.navigate('Dashboard')
+        } catch (error) {
+            console.log(error);
+        }
+    }
     const genderDropdownRef = useRef();
     const styles = StyleSheet.create({
         shadow: {
@@ -49,7 +91,6 @@ const PersonalInformation = () => {
         },
         dropdown2RowTxtStyle: { color: "#CACACA", textAlign: "left" },
     });
-    const [gender, setGender] = useState([]);
     useEffect(() => {
         setTimeout(() => {
             setGender([
@@ -64,7 +105,7 @@ const PersonalInformation = () => {
         }, 1000);
     }, []);
     return (
-        <ScrollView style={{ minHeight: Dimensions.get('window').height, backgroundColor: '#FFFFFF', padding: 20 }}>
+        <ScrollView style={{ backgroundColor: '#FFFFFF', padding: 20 }}>
 
             <View style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between' }}>
                 <View style={{ display: 'flex', flexDirection: 'column', width: '30%', justifyContent: 'flex-start' }}>
@@ -73,18 +114,43 @@ const PersonalInformation = () => {
                 </View>
 
                 <View style={{ display: 'flex', flexDirection: 'column', width: '60%', justifyContent: 'flex-start' }}>
-                    <Text style={{ fontSize: 12, padding: 5 }}>Your Name</Text>
-                    <TextInput
-                        underlineColorAndroid="transparent"
-
-                        style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 10, height: 50, borderTopRightRadius: 10, marginBottom: 9 }}
-                        placeholder='First name'
+                    <Controller
+                        name="firstName"
+                        control={control}
+                        rules={{
+                            required: { value: true, message: 'Required Input' }
+                        }}
+                        render={({ field: { onChange, value } }) => (
+                            <View style={{ marginBottom: 10 }}>
+                                <TextInput
+                                    value={value}
+                                    onChangeText={(text) => onChange(text)}
+                                    underlineColorAndroid="#fff"
+                                    style={{paddingLeft: 12,  backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 10, height: 50, borderTopRightRadius: 10,borderColor: `${!errors?.firstName ? '#D9D9D9' : 'red'}`, marginBottom: 0 }}
+                                    placeholder='First name'
+                                />
+                                <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.firstName?.message || ''}</Text>
+                            </View>
+                        )}
                     />
-                    <TextInput
-                        underlineColorAndroid="transparent"
-
-                        style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 10, borderColor: '#D9D9D9', borderTopLeftRadius: 10, height: 50, borderTopRightRadius: 10, marginBottom: 9 }}
-                        placeholder='Last name'
+                    <Controller
+                        name="lastname"
+                        control={control}
+                        rules={{
+                            required: { value: true, message: 'Required Input' }
+                        }}
+                        render={({ field: { onChange, value } }) => (
+                            <View style={{ marginBottom: 10 }}>
+                                <TextInput
+                                    value={value}
+                                    onChangeText={(text) => onChange(text)}
+                                    underlineColorAndroid="#fff"
+                                    style={{ paddingLeft: 12,backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 10,borderColor: `${!errors?.lastname ? '#D9D9D9' : 'red'}`, height: 50, borderTopRightRadius: 10, marginBottom: 0 }}
+                                    placeholder='Last name'
+                                />
+                                <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.lastname?.message || ''}</Text>
+                            </View>
+                        )}
                     />
                     <Text style={{ fontSize: 12, padding: 5 }}>Gender</Text>
                     <SelectDropdown
@@ -98,6 +164,7 @@ const PersonalInformation = () => {
                             return selectedItem.title;
                         }}
                         rowTextForSelection={(item, index) => {
+                           
                             return item.title;
                         }}
                         buttonStyle={styles.dropdown2BtnStyle}
@@ -122,29 +189,77 @@ const PersonalInformation = () => {
 
             <View style={{ display: 'flex', flexDirection: 'column', paddingVertical: 15 }}>
                 <Text style={{ fontSize: 12, padding: 5 }}>Your Practice licence</Text>
-                <TextInput
-                    underlineColorAndroid="#fff"
-                    style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, marginBottom: 20 }}
-                    placeholder='Licence number'
+                <Controller
+                    name="licence"
+                    control={control}
+                    rules={{
+                        required: { value: true, message: 'Required Input' }
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                        <View style={{ marginBottom: 10 }}>
+                            <TextInput
+                                value={value}
+                                keyboardType='numeric'
+                                onChangeText={(text) => onChange(text)}
+                                underlineColorAndroid="#fff"
+                                style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.licence ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, }}
+                                placeholder='Licence number'
+                            />
+                            <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.licence?.message || ''}</Text>
+                        </View>
+                    )}
                 />
 
+
                 <Text style={{ fontSize: 12, padding: 5 }}>Date of birth</Text>
-                <TextInput
-                    underlineColorAndroid="#fff"
-                    style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, marginBottom: 20 }}
-                    placeholder='dd - mm - yyyy'
+                <Controller
+                    name="dateofbirth"
+                    control={control}
+                    rules={{
+                        required: { value: true, message: 'Required Input' }
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                        <View style={{ marginBottom: 10 }}>
+                            <TextInput
+                                value={value}
+                                keyboardType='numeric'
+                                onChangeText={(text) => onChange(text)}
+                                underlineColorAndroid="#fff"
+                                style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.dateofbirth ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, }}
+                                placeholder='dd - mm - yyyy'
+                            />
+                            <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.dateofbirth?.message || ''}</Text>
+                        </View>
+                    )}
                 />
                 <Text style={{ fontSize: 12, padding: 5 }}>Biography</Text>
-                <TextInput
-                    underlineColorAndroid="#fff"
-                    style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 15, height: 120, borderTopRightRadius: 15, marginBottom: 20 }}
-                    placeholder='Type down some words about you' />
+
+                <Controller
+                    name="bio"
+                    control={control}
+                    rules={{
+                        required: { value: true, message: 'Required Input' }
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                        <View style={{ marginBottom: 10 }}>
+                            <TextInput
+                                value={value}
+                                keyboardType='numeric'
+                                onChangeText={(text) => onChange(text)}
+                                underlineColorAndroid="#fff"
+                                style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.bio ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 120, borderTopRightRadius: 15, }}
+                                placeholder='Type down some words about you'
+                            />
+                            <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.bio?.message || ''}</Text>
+                        </View>
+                    )}
+                />
                 <Text style={{ fontSize: 12, padding: 5 }}>Signature</Text>
-                <TextInput
+                <View
                     underlineColorAndroid="#fff"
                     style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 15, height: 120, borderTopRightRadius: 15 }}
                     placeholder=''
-                />
+                ></View>
             </View>
             <View style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
                 <TouchableOpacity style={{ width: '40%', backgroundColor: '#FFFFFF', paddingVertical: 12, borderRadius: 10, margin: 5, borderColor: '#E19538', borderStyle: 'solid', borderWidth: 1 }}>
@@ -152,70 +267,185 @@ const PersonalInformation = () => {
                 </TouchableOpacity>
             </View>
             <Text style={{ fontSize: 12, padding: 5 }}>Mobile Number</Text>
-            <TextInput
-                underlineColorAndroid="transparent"
-
-                style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 10, height: 50, borderTopRightRadius: 10, marginBottom: 9 }}
-                placeholder='Enter Mobile Number'
+            <Controller
+                name="phone"
+                control={control}
+                rules={{
+                    required: { value: true, message: 'Required Input' },
+                    minLength: { value: 10, message: 'Invalid Mobile Number' },
+                    maxLength: { value: 10, message: 'Invalid Mobile Number' }
+                }}
+                render={({ field: { onChange, value } }) => (
+                    <View style={{ marginBottom: 10 }}>
+                        <TextInput
+                            value={value}
+                            keyboardType='numeric'
+                            onChangeText={(text) => onChange(text)}
+                            underlineColorAndroid="#fff"
+                            style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.phone ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, }}
+                            placeholder='Enter Mobile Number'
+                        />
+                        <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.phone?.message || ''}</Text>
+                    </View>
+                )}
             />
-            <Text style={{ fontSize: 12, padding: 5 }}>Email Id</Text>
-            <TextInput
-                underlineColorAndroid="transparent"
 
-                style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 10, height: 50, borderTopRightRadius: 10, marginBottom: 9 }}
-                placeholder='Enter Email Id'
+            <Text style={{ fontSize: 12, padding: 5 }}>Email Id</Text>
+            <Controller
+                name="email"
+                control={control}
+                rules={{
+                    required: { value: true, message: 'Required Input', pattern: { value: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/, message: 'Invalid Email' } }
+                }}
+                render={({ field: { onChange, value } }) => (
+                    <View style={{ marginBottom: 10 }}>
+                        <TextInput
+                            value={value}
+                            onChangeText={(text) => onChange(text)}
+                            underlineColorAndroid="#fff"
+                            style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.email ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, }}
+                            placeholder='Enter Email Id'
+                        />
+                        <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.email?.message || ''}</Text>
+                    </View>
+                )}
             />
             <Text style={{ fontSize: 12, padding: 5 }}>Address line 1</Text>
-            <TextInput
-                underlineColorAndroid="#fff"
-                style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 15, height: 120, borderTopRightRadius: 15, marginBottom: 20 }}
-                placeholder='Door/flat no, Appertement/Society name' />
+            <Controller
+                name="address1"
+                control={control}
+                rules={{
+                    required: { value: true, message: 'Required Input' }
+                }}
+                render={({ field: { onChange, value } }) => (
+                    <View style={{ marginBottom: 10 }}>
+                        <TextInput
+                            value={value}
+                            onChangeText={(text) => onChange(text)}
+                            underlineColorAndroid="#fff"
+                            style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.address1 ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 120, borderTopRightRadius: 15, }}
+                            placeholder='Door/flat no, Appertement/Society name'
+                        />
+                        <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.address1?.message || ''}</Text>
+                    </View>
+                )}
+            />
             <Text style={{ fontSize: 12, padding: 5 }}>Address line 2</Text>
-            <TextInput
-                underlineColorAndroid="#fff"
-                style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 15, height: 120, borderTopRightRadius: 15, marginBottom: 20 }}
-                placeholder='Street name, Area name' />
+            <Controller
+                name="address2"
+                control={control}
+                rules={{
+                    required: { value: true, message: 'Required Input' }
+                }}
+                render={({ field: { onChange, value } }) => (
+                    <View style={{ marginBottom: 10 }}>
+                        <TextInput
+                            value={value}
+                            onChangeText={(text) => onChange(text)}
+                            underlineColorAndroid="#fff"
+                            style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.address2 ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 120, borderTopRightRadius: 15, }}
+                            placeholder='Street name , Area nane'
+                        />
+                        <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.address2?.message || ''}</Text>
+                    </View>
+                )}
+            />
 
             <Text style={{ fontSize: 12, padding: 5 }}>City</Text>
-            <TextInput
-                underlineColorAndroid="transparent"
-
-                style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 10, height: 50, borderTopRightRadius: 10, marginBottom: 9 }}
-                placeholder='City name'
-            />
+             <Controller
+                    name="city"
+                    control={control}
+                    rules={{
+                        required: { value: true, message: 'Required Input' }
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                        <View style={{ marginBottom: 10 }}>
+                            <TextInput
+                                value={value}
+                                onChangeText={(text) => onChange(text)}
+                                underlineColorAndroid="#fff"
+                                style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.city ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, }}
+                                placeholder='City'
+                            />
+                            <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.city?.message || ''}</Text>
+                        </View>
+                    )}
+                />
             <Text style={{ fontSize: 12, padding: 5 }}>Pincode</Text>
-            <TextInput
-                underlineColorAndroid="transparent"
-
-                style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 10, height: 50, borderTopRightRadius: 10, marginBottom: 9 }}
-                placeholder='Postal code'
-            />
+            <Controller
+                    name="pincode"
+                    control={control}
+                    rules={{
+                        required: { value: true, message: 'Required Input' }
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                        <View style={{ marginBottom: 10 }}>
+                            <TextInput
+                                value={value}
+                                keyboardType='numeric'
+                                onChangeText={(text) => onChange(text)}
+                                underlineColorAndroid="#fff"
+                                style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.pincode ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, }}
+                                placeholder='PinCode'
+                            />
+                            <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.pincode?.message || ''}</Text>
+                        </View>
+                    )}
+                />
 
             <Text style={{ fontSize: 12, padding: 5 }}>State/Province</Text>
-            <TextInput
-                underlineColorAndroid="transparent"
-
-                style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 10, height: 50, borderTopRightRadius: 10, marginBottom: 9 }}
-                placeholder='State/Province'
-            />
+            <Controller
+                    name="couStateProvincentry"
+                    control={control}
+                    rules={{
+                        required: { value: true, message: 'Required Input' }
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                        <View style={{ marginBottom: 10 }}>
+                            <TextInput
+                                value={value}
+                                onChangeText={(text) => onChange(text)}
+                                underlineColorAndroid="#fff"
+                                style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.couStateProvincentry ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, }}
+                                placeholder='State/Province'
+                            />
+                            <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.couStateProvincentry?.message || ''}</Text>
+                        </View>
+                    )}
+                />
             <Text style={{ fontSize: 12, padding: 5 }}>Country</Text>
-            <TextInput
-                underlineColorAndroid="transparent"
+            <Controller
+                    name="country"
+                    control={control}
+                    rules={{
+                        required: { value: true, message: 'Required Input' }
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                        <View style={{ marginBottom: 10 }}>
+                            <TextInput
+                                value={value}
+                                onChangeText={(text) => onChange(text)}
+                                underlineColorAndroid="#fff"
+                                style={{ backgroundColor: '#fff', paddingLeft: 15, borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: `${!errors?.country ? '#D9D9D9' : 'red'}`, borderTopLeftRadius: 15, height: 50, borderTopRightRadius: 15, }}
+                                placeholder='Country'
+                            />
+                            <Text style={{ color: 'red', marginLeft: 10, fontSize: 13 }}>{errors?.country?.message || ''}</Text>
+                        </View>
+                    )}
+                />
 
-                style={{ backgroundColor: '#fff', borderWidth: 1, borderStyle: 'solid', borderRadius: 15, borderColor: '#D9D9D9', borderTopLeftRadius: 10, height: 50, borderTopRightRadius: 10, marginBottom: 9 }}
-                placeholder='Country'
-            />
-
-            <View style={{ display: 'flex', flexDirection: 'row',justifyContent:'space-between',marginVertical:25 }}>
+            <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 25 }}>
                 <TouchableOpacity style={{ width: '40%', backgroundColor: '#FFFFFF', paddingVertical: 12, borderRadius: 10, margin: 5, borderColor: '#E19538', borderStyle: 'solid', borderWidth: 1 }}>
                     <Text style={{ fontSize: 14, color: '#E19538', fontWeight: 'bold', textAlign: 'center' }}>cancel</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={{ width: '40%', backgroundColor: '#E19538', paddingVertical: 12, borderRadius: 10, margin: 5, borderColor: '#E19538', borderStyle: 'solid', borderWidth: 1 }}>
+                <TouchableOpacity onPress={handleSubmit(save)} style={{ width: '40%', backgroundColor: '#E19538', paddingVertical: 12, borderRadius: 10, margin: 5, borderColor: '#E19538', borderStyle: 'solid', borderWidth: 1 }}>
                     <Text style={{ fontSize: 14, color: '#FFFFFF', fontWeight: 'bold', textAlign: 'center' }}>Save</Text>
                 </TouchableOpacity>
             </View>
+            <View style={{ height: 100 }}>
 
+            </View>
         </ScrollView>
     )
 }
